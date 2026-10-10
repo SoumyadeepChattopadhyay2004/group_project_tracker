@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Group Project Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--bg:#f3f5ff;--card:#fff;--tx:#1b2140;--mu:#6d7396;--bd:#e0e4f8;--p:#6c5ce7;--g:#00b894;--o:#fd9644;--r:#e17055;--b:#0984e3;--sh:0 4px 18px #6c5ce71a}
+:root[data-theme=dark]{--bg:#0f1126;--card:#1a1d3b;--tx:#eceeff;--mu:#9aa0c9;--bd:#2c3060;--sh:0 4px 18px #0006}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,Segoe UI,Roboto,sans-serif;transition:.2s}
+header{background:linear-gradient(120deg,#6c5ce7,#0984e3 60%,#00b894);color:#fff;padding:14px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:19px}.hr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+nav{display:flex;gap:6px;padding:12px;overflow-x:auto;max-width:1100px;margin:auto}
+nav button{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 15px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:.15s}
+nav button:hover{transform:translateY(-2px)}nav button.on{background:var(--p);color:#fff;border-color:var(--p)}
+main{padding:0 12px 50px;max-width:1100px;margin:auto}
+.card{background:var(--card);border:1px solid var(--bd);border-left:5px solid var(--p);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--sh)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.stat{text-align:center;color:#fff;border:0;background:linear-gradient(135deg,var(--c1),var(--c2))}.stat b{font-size:28px;display:block}
+input,select,textarea,button{font:inherit}
+input,select,textarea{width:100%;padding:9px;margin:4px 0 8px;border-radius:9px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+.btn{background:var(--p);color:#fff;border:0;border-radius:9px;padding:8px 14px;cursor:pointer;margin:2px;transition:.15s}.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn.g{background:var(--g)}.btn.o{background:var(--o)}.btn.r{background:var(--r)}.btn.b{background:var(--b)}
+.bar{height:10px;background:var(--bd);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--g),var(--b));transition:width .4s}
+.mu{color:var(--mu);font-size:13px}.tag{padding:2px 9px;border-radius:10px;font-size:12px;color:#fff;background:var(--b)}.tag.g{background:var(--g)}.tag.r{background:var(--r)}.tag.o{background:var(--o)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}.cal div{padding:8px 2px;border-radius:9px;cursor:pointer;position:relative;min-height:40px}
+.cal .h{cursor:default;color:var(--mu);font-size:12px}.cal .d:hover{background:var(--bd)}.cal .t{outline:2px solid var(--o)}.cal .s{background:var(--p);color:#fff}
+.cal sup{position:absolute;top:2px;right:4px;background:var(--r);color:#fff;border-radius:8px;padding:0 5px;font-size:10px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:110px}.bars i{flex:1;background:linear-gradient(var(--p),var(--b));border-radius:4px 4px 0 0;min-height:2px}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0}.row>span:first-child{width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row .bar{flex:1}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%}td,th{padding:7px 8px;border-bottom:1px solid var(--bd);text-align:left}
+#auth{max-width:380px;margin:60px auto;padding:0 14px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:#222;color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:9;max-width:90%}
+#modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:8;padding:14px}#modal>div{background:var(--card);padding:18px;border-radius:14px;max-width:600px;width:100%;max-height:85vh;overflow:auto}
+.msg{padding:8px 0;border-bottom:1px solid var(--bd)}svg{max-width:100%}
+</style></head><body>
+<div id="auth" style="display:none"><div class="card"><h2>📊 Group Project Tracker</h2><div id="af"></div></div></div>
+<div id="shell" style="display:none"><header><h1>📊 Group Project Tracker</h1><div class="hr"><span id="who"></span><button class="btn o" onclick="theme()">🌓 Day/Night</button><button class="btn r" onclick="logout()">Logout</button></div></header><nav id="nav"></nav><main id="main"></main></div>
+<div id="toast"></div><div id="modal" onclick="if(event.target===this)this.style.display='none'"><div id="mb"></div></div>
+<script>
+let T=localStorage.getItem('tk')||'',S=null,tab='dash',cm=new Date(),sel='',arm='',mode='login',lastJ='',seenKey='';
+const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dk=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')},td=()=>dk(Date.now());
+const nm=id=>(S.users.find(u=>u.id===id)||{name:'Removed member'}).name,me=()=>S.users.find(u=>u.id===S.me)||{},isL=()=>me().role==='leader';
+const col=id=>`hsl(${Math.max(0,S.users.findIndex(u=>u.id===id))*67%360} 70% 52%)`,fmt=t=>new Date(t).toLocaleString();
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',3500)}
+function theme(){const r=document.documentElement,n=r.dataset.theme==='dark'?'light':'dark';r.dataset.theme=n;localStorage.setItem('th',n)}
+document.documentElement.dataset.theme=localStorage.getItem('th')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+async function api(m,u,b){const r=await fetch('/api'+u,{method:m,headers:{'Content-Type':'application/json',Authorization:'Bearer '+T},body:b?JSON.stringify(b):undefined});
+ const ct=r.headers.get('content-type')||'';if(!r.ok){const j=await r.json().catch(()=>({}));if(r.status===401&&T)logout();throw new Error(j.error||'Error '+r.status)}return ct.includes('json')?r.json():r.blob()}
+const act=async(f)=>{try{await f();await load()}catch(e){toast(e.message)}};
+/* auth */
+function authUI(){$('auth').style.display='block';$('shell').style.display='none';
+ $('af').innerHTML=`<div>${['login','signup'].map(k=>`<button class="btn ${mode===k?'':'o'}" onclick="mode='${k}';authUI()">${k==='login'?'Login':'Sign up'}</button>`).join('')}</div><p class="mu">${mode==='signup'?'Everyone joins as a member. The leader role is claimed separately inside the app.':'Welcome back!'}</p>
+ ${mode==='signup'?'<input id="an" placeholder="Full name"><input id="ap" placeholder="Mobile, e.g. +919876543210">':''}<input id="ae" type="email" placeholder="Email (Gmail)"><input id="aw" type="password" placeholder="Password (min 8 chars)"><button class="btn g" onclick="doAuth()">${mode==='login'?'Login':'Create account'}</button>`}
+async function doAuth(){try{const v=i=>$(i)?$(i).value:'';const r=await (async()=>{const x=await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v('an'),phone:v('ap'),email:v('ae'),password:v('aw')})});const j=await x.json();if(!x.ok)throw new Error(j.error);return j})();T=r.token;localStorage.setItem('tk',T);await load()}catch(e){toast(e.message)}}
+function logout(){T='';localStorage.removeItem('tk');S=null;authUI()}
+/* load + poll */
+async function load(){const j=await api('GET','/state');S=j;lastJ=JSON.stringify(j);$('auth').style.display='none';$('shell').style.display='block';
+ $('who').innerHTML=`${esc(me().name)} <span class="tag ${isL()?'o':''}">${isL()?'Leader':'Member'}</span>`;nav();paint()}
+setInterval(async()=>{if(!T||!S)return;if(document.activeElement&&document.activeElement.type==='range')return;try{const j=await api('GET','/state'),s=JSON.stringify(j);if(s!==lastJ){lastJ=s;S=j;paint()}}catch{}},5000);
+const TABS=[['dash','🏠 Dashboard'],['tasks','✅ Tasks'],['meet','📅 Meetings'],['docs','📎 Evidence'],['chat','💬 Chat'],['act','📈 Activity'],['team','👥 Team']];
+function nav(){$('nav').innerHTML=TABS.map(([k,l])=>`<button class="${k===tab?'on':''}" onclick="setTab('${k}')">${l}</button>`).join('')}
+function setTab(t){tab=t;arm='';nav();$('main').innerHTML=(FORM[t]?FORM[t]():'')+'<div id="L"></div>';paint()}
+function paint(){if(!$('L'))return setTab(tab);$('L').innerHTML=LIST[tab]();if(tab==='chat')markSeen()}
+async function markSeen(){const k=S.chat.filter(c=>!c.seen.includes(S.me)).length;if(!k||seenKey===k+':'+S.chat.length)return;seenKey=k+':'+S.chat.length;try{await api('POST','/chat/seen',{});await load()}catch{}}
+/* analytics helpers */
+const W={modify:2,post:3,chat:1,view:.5},cnt=(u,t)=>S.acts.filter(a=>a.u===u&&a.type===t).length;
+const score=u=>S.tasks.filter(t=>t.who===u&&t.p===100).length*5+S.docs.filter(d=>d.u===u).length*4+Object.keys(W).reduce((a,k)=>a+cnt(u,k)*W[k],0);
+const prog=u=>{const t=S.tasks.filter(x=>x.who===u);return t.length?Math.round(t.reduce((a,x)=>a+x.p,0)/t.length):0};
+const bar=p=>`<div class="bar"><i style="width:${p}%"></i></div>`;
+function events(){const e=[];S.acts.forEach(a=>e.push({d:dk(a.t),t:a.t,x:`<b style="color:${col(a.u)}">${esc(nm(a.u))}</b> · ${a.type} · ${esc(a.d)}`}));
+ S.tasks.forEach(t=>e.push({d:t.due,t:new Date(t.due).getTime(),x:`⏰ Due: ${esc(t.title)} (${esc(nm(t.who))}, ${t.p}%)`}));
+ S.meetings.forEach(m=>e.push({d:dk(m.at),t:new Date(m.at).getTime(),x:`📅 Meeting: ${esc(m.title)} at ${new Date(m.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`}));
+ S.docs.forEach(d=>e.push({d:d.date,t:d.ts,x:`📎 Evidence dated ${d.date}: ${esc(d.title)} (${esc(nm(d.u))})`}));return e}
+function donut(items){const tot=items.reduce((a,i)=>a+i.v,0)||1;let off=0;return `<svg viewBox="0 0 42 42" width="170"><circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--bd)" stroke-width="6"/>${items.map(i=>{const p=i.v/tot*100,s=`<circle cx="21" cy="21" r="15.9" fill="none" stroke="${col(i.u)}" stroke-width="6" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${25-off}"><title>${esc(nm(i.u))}: ${Math.round(p)}%</title></circle>`;off+=p;return s}).join('')}</svg>`}
+/* views */
+const FORM={
+tasks:()=>`<div class="card"><h3>New daily task</h3><input id="tt" maxlength="80" placeholder="Task title"><select id="ta">${S.users.filter(u=>isL()||u.id===S.me).map(u=>`<option value="${u.id}" ${u.id===S.me?'selected':''}>${esc(u.name)}</option>`).join('')}</select><input id="td" type="date" min="${td()}" value="${td()}"><button class="btn g" onclick="addTask()">Add task</button></div>`,
+meet:()=>isL()?`<div class="card"><h3>Schedule meeting</h3><input id="mt" placeholder="Title" maxlength="80"><input id="md" type="datetime-local"><textarea id="mg" placeholder="Agenda / meeting link" maxlength="300"></textarea><button class="btn g" onclick="addMeet()">Schedule</button></div>`:'',
+docs:()=>`<div class="card"><h3>Submit evidence</h3><input id="dt" placeholder="Title" maxlength="80"><input id="dd" type="date" max="${td()}" value="${td()}"><textarea id="dx" placeholder="What does this prove? (min 10 chars)" maxlength="400"></textarea><select id="dk"><option value="">Linked task (optional)</option>${S.tasks.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join('')}</select><select id="dty" onchange="$('df').style.display=this.value==='file'?'block':'none';$('dl').style.display=this.value==='link'?'block':'none'"><option value="file">Upload file (png/jpg/pdf/txt, ≤300 KB)</option><option value="link">Evidence link (https)</option></select><input id="df" type="file" accept=".png,.jpg,.jpeg,.pdf,.txt"><input id="dl" style="display:none" placeholder="https://…"><select id="dv"><option value="public">🌍 Public (everyone)</option><option value="private">🔒 Private (me + leader)</option></select><button class="btn g" onclick="addDoc()">Submit</button></div>`,
+chat:()=>`<div class="card"><textarea id="cm" maxlength="500" placeholder="Write a message…"></textarea><button class="btn g" onclick="sendChat()">Send</button></div>`};
+const LIST={
+dash(){const tk=S.tasks,tp=tk.length?Math.round(tk.reduce((a,t)=>a+t.p,0)/tk.length):0,od=tk.filter(t=>t.p<100&&t.due<td()).length,act24=new Set(S.acts.filter(a=>a.t>Date.now()-864e5).map(a=>a.u)).size;
+ const st=[['Team progress',tp+'%','#6c5ce7','#0984e3'],['Tasks done',tk.filter(t=>t.p===100).length+'/'+tk.length,'#00b894','#00cec9'],['Overdue',od,'#e17055','#fd9644'],['Evidence',S.docs.length,'#0984e3','#6c5ce7'],['Active (24h)',act24+'/'+S.users.length,'#fdcb6e','#e17055']];
+ const days=[...Array(14)].map((_,i)=>dk(Date.now()-(13-i)*864e5)),dc=days.map(d=>S.acts.filter(a=>dk(a.t)===d).length),mx=Math.max(1,...dc),sc=S.users.map(u=>({u:u.id,v:score(u.id)}));
+ const ev=events(),cnts={};ev.forEach(e=>cnts[e.d]=(cnts[e.d]||0)+1);
+ const y=cm.getFullYear(),mo=cm.getMonth(),first=new Date(y,mo,1).getDay(),dim=new Date(y,mo+1,0).getDate();
+ let cells=['S','M','T','W','T','F','S'].map(x=>`<div class="h">${x}</div>`).join('')+'<div style="cursor:default"></div>'.repeat(first);
+ for(let i=1;i<=dim;i++){const k=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(i).padStart(2,'0');cells+=`<div class="d ${k===td()?'t':''} ${k===sel?'s':''}" onclick="sel='${k}';paint()">${i}${cnts[k]?`<sup>${cnts[k]}</sup>`:''}</div>`}
+ const day=sel||td(),de=ev.filter(e=>e.d===day).sort((a,b)=>b.t-a.t);
+ return `<div class="grid">${st.map(s=>`<div class="card stat" style="--c1:${s[2]};--c2:${s[3]}"><b>${s[1]}</b>${s[0]}</div>`).join('')}</div>
+ <div class="grid"><div class="card"><h3>📅 ${cm.toLocaleString([], {month:'long',year:'numeric'})} <button class="btn" onclick="cm=new Date(cm.getFullYear(),cm.getMonth()-1,1);paint()">‹</button><button class="btn" onclick="cm=new Date(cm.getFullYear(),cm.getMonth()+1,1);paint()">›</button></h3><div class="cal">${cells}</div></div>
+ <div class="card" style="border-left-color:var(--o)"><h3>Updates on ${day}</h3>${de.map(e=>`<p style="margin:6px 0">${e.x}</p>`).join('')||'<p class="mu">No updates on this date.</p>'}</div></div>
+ <div class="grid"><div class="card"><h3>Contribution share</h3><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">${donut(sc)}<div>${sc.map(s=>`<div class="mu"><span style="color:${col(s.u)}">●</span> ${esc(nm(s.u))} — ${s.v}</div>`).join('')}</div></div></div>
+ <div class="card"><h3>Individual progress</h3>${S.users.map(u=>`<div class="row"><span style="color:${col(u.id)}">${esc(u.name)}</span>${bar(prog(u.id))}<span class="mu">${prog(u.id)}%</span></div>`).join('')}</div></div>
+ <div class="grid"><div class="card"><h3>Team activity, last 14 days</h3><div class="bars">${dc.map((c,i)=>`<i style="height:${c/mx*100}%" title="${days[i]}: ${c}"></i>`).join('')}</div></div>
+ <div class="card"><h3>Activeness, last 7 days</h3>${S.users.map(u=>{const c=S.acts.filter(a=>a.u===u.id&&a.t>Date.now()-6048e5).length,m7=Math.max(1,...S.users.map(x=>S.acts.filter(a=>a.u===x.id&&a.t>Date.now()-6048e5).length));return `<div class="row"><span style="color:${col(u.id)}">${esc(u.name)}</span>${bar(c/m7*100)}<span class="mu">${c}</span></div>`}).join('')}</div></div>`},
+tasks(){const g={};S.tasks.forEach(t=>(g[t.due]=g[t.due]||[]).push(t));
+ return Object.keys(g).sort().reverse().map(d=>`<h4>📆 Due ${d}</h4>`+g[d].map(t=>{const can=t.who===S.me||isL();return `<div class="card" style="border-left-color:${t.p===100?'var(--g)':'var(--o)'}"><b>${esc(t.title)}</b> <span class="mu">→ ${esc(nm(t.who))}</span> ${t.p<100&&t.due<td()?'<span class="tag r">OVERDUE</span>':''}${bar(t.p)}${can?`<input type="range" min="0" max="100" step="5" value="${t.p}" onchange="setProg('${t.id}',this.value)">`:''}<span class="mu">${t.p}%</span> ${isL()?`<button class="btn r" onclick="delTask('${t.id}')">Delete</button>`:''}</div>`}).join('')).join('')||'<p class="mu">No tasks yet.</p>'},
+meet(){return [...S.meetings].sort((a,b)=>a.at.localeCompare(b.at)).map(m=>`<div class="card" style="border-left-color:var(--b)"><b>${esc(m.title)}</b> ${new Date(m.at)<new Date()?'<span class="tag r">Past</span>':''}<p class="mu">${fmt(m.at)} · ${esc(m.agenda)}</p>${isL()?`<button class="btn b" onclick="announce('${m.id}')">📣 Announce (Gmail → SMS fallback)</button>`:''}${m.ann?`<details open><summary class="mu">Last announcement ${fmt(m.ann.t)}</summary>${m.ann.res.map(r=>`<div class="mu">${esc(nm(r.u))}: ${esc(r.status)}</div>`).join('')}</details>`:''}</div>`).join('')||'<p class="mu">No meetings.</p>'},
+docs(){const g={};S.docs.forEach(d=>(g[d.date]=g[d.date]||[]).push(d));
+ return (S.hidden?`<p class="mu">🔒 ${S.hidden} private item(s) hidden from you.</p>`:'')+Object.keys(g).sort().reverse().map(d=>`<h4>📆 ${d}</h4>`+g[d].map(x=>`<div class="card" style="border-left-color:${x.vis==='public'?'var(--g)':'var(--r)'}"><b>${esc(x.title)}</b> <span class="tag ${x.vis==='public'?'g':'r'}">${x.vis}</span><p>${esc(x.desc)}</p><p class="mu">by ${esc(nm(x.u))} · submitted ${fmt(x.ts)}${x.task?' · task: '+esc((S.tasks.find(t=>t.id===x.task)||{title:'(deleted)'}).title):''}${x.sha?'<br>SHA-256 '+x.sha.slice(0,16)+'… · '+esc(x.name):''}</p><p class="mu">👁 Viewed by: ${x.views.map(v=>esc(nm(v.u))).join(', ')||'nobody yet'}</p><button class="btn b" onclick="openDoc('${x.id}')">View</button></div>`).join('')).join('')},
+chat(){return `<div class="card">${S.chat.slice(-80).map(c=>`<div class="msg"><b style="color:${col(c.u)}">${esc(nm(c.u))}</b> <span class="mu">${fmt(c.t)}</span><br>${esc(c.text)}<div class="mu">👁 Seen by: ${c.seen.filter(s=>s!==c.u).map(nm).join(', ')||'no one yet'}</div></div>`).join('')||'<p class="mu">No messages.</p>'}</div>`},
+act(){return `<div class="card tw"><h3>Activity per member</h3><table><tr><th>Member</th><th>Modify</th><th>Post</th><th>Chat sent</th><th>Views</th><th>Chat msgs seen</th><th>Last active</th></tr>${S.users.map(u=>{const l=[...S.acts].reverse().find(a=>a.u===u.id);return `<tr><td style="color:${col(u.id)}"><b>${esc(u.name)}</b></td><td>${cnt(u.id,'modify')}</td><td>${cnt(u.id,'post')}</td><td>${cnt(u.id,'chat')}</td><td>${cnt(u.id,'view')}</td><td>${S.chat.filter(c=>c.seen.includes(u.id)&&c.u!==u.id).length}</td><td>${l?fmt(l.t):'—'}</td></tr>`}).join('')}</table></div>
+ <div class="card"><h3>Who viewed recent messages</h3>${S.chat.slice(-8).reverse().map(c=>`<p class="mu"><b>${esc(nm(c.u))}</b>: ${esc(c.text.slice(0,50))} → seen by ${c.seen.filter(s=>s!==c.u).map(nm).join(', ')||'no one'}</p>`).join('')||'<p class="mu">No messages.</p>'}</div>
+ <div class="card"><h3>Live feed (everyone sees all updates)</h3>${[...S.acts].reverse().slice(0,40).map(a=>`<p class="mu">${fmt(a.t)} · <b>${esc(nm(a.u))}</b> · ${a.type} · ${esc(a.d)}</p>`).join('')}</div>`},
+team(){const hasL=S.users.some(u=>u.role==='leader');
+ return `<div class="card">${!hasL?`<p>No leader yet. If you are the leader, declare yourself:</p><button class="btn o" onclick="act(()=>api('POST','/leader/claim'))">👑 I am the leader</button>`:'<p class="mu">Leadership can only be handed over by the current leader.</p>'}<p class="mu">Notifications: Gmail ${S.notify.gmail?'✅ configured':'❌ not configured'} · SMS fallback ${S.notify.sms?'✅ configured':'❌ not configured'}</p></div>
+ <div class="card tw"><table><tr><th>Name</th><th>Role</th><th>Mobile</th><th>Email</th><th></th></tr>${S.users.map(u=>`<tr><td>${esc(u.name)}</td><td>${u.role}</td><td>${esc(u.phone||'')}</td><td>${esc(u.email||'')}</td><td>${isL()&&u.id!==S.me?`<button class="btn o" onclick="transfer('${u.id}')">Make leader</button><button class="btn r" onclick="rm('${u.id}')">${arm===u.id?'Confirm remove':'Remove'}</button>`:''}</td></tr>`).join('')}</table></div>`}};
+/* actions */
+const val=i=>($(i).value||'').trim();
+function addTask(){act(async()=>{await api('POST','/task',{title:val('tt'),who:$('ta').value,due:$('td').value});$('tt').value=''})}
+function setProg(id,v){act(()=>api('PATCH','/task/'+id,{p:+v}))}
+function delTask(id){act(()=>api('POST','/task/'+id+'/delete',{}))}
+function addMeet(){const d=$('md').value;act(async()=>{await api('POST','/meeting',{title:val('mt'),at:d?new Date(d).toISOString():'',agenda:val('mg')});toast('Meeting scheduled')})}
+function announce(id){const m=S.meetings.find(x=>x.id===id);toast('Sending…');act(async()=>{const r=await api('POST','/meeting/'+id+'/announce',{when:fmt(m.at)});toast('Announcement processed – see status per member')})}
+function addDoc(){const f=$('df').files[0],link=$('dty').value==='link',base={title:val('dt'),date:$('dd').value,desc:val('dx'),vis:$('dv').value,task:$('dk').value};
+ const go=b=>act(async()=>{await api('POST','/doc',{...base,...b});toast('Evidence submitted')});
+ if(link)return go({link:val('dl')});if(!f)return toast('Choose a file first');
+ const r=new FileReader();r.onload=()=>go({name:f.name,data:String(r.result).split(',')[1]});r.onerror=()=>toast('Could not read file');r.readAsDataURL(f)}
+async function openDoc(id){try{const r=await api('GET','/doc/'+id+'/open');if(r.url){window.open(r.url,'_blank','noopener');return load()}
+ const u=URL.createObjectURL(r),im=r.type.startsWith('image/');$('mb').innerHTML=(im?`<img style="max-width:100%" src="${u}">`:r.type==='application/pdf'?`<iframe src="${u}" style="width:100%;height:60vh;border:0"></iframe>`:`<p><a class="btn b" href="${u}" target="_blank">Open file</a></p>`)+'<p><button class="btn" onclick="$(\'modal\').style.display=\'none\'">Close</button></p>';$('modal').style.display='flex';load()}catch(e){toast(e.message)}}
+function sendChat(){act(async()=>{await api('POST','/chat',{text:val('cm')});$('cm').value=''})}
+function transfer(id){act(()=>api('POST','/leader/transfer',{to:id}))}
+function rm(id){if(arm!==id){arm=id;paint();return toast('Click "Confirm remove". Their tasks move to you.')}arm='';act(()=>api('POST','/member/'+id+'/remove',{}))}
+if(T)load().catch(authUI);else authUI();
+</script></body></html>

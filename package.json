@@ -1,0 +1,1 @@
+{"name": "group-project-tracker", "version": "1.0.0", "description": "Group project progress & coordination tracker (Node.js)", "main": "server.js", "scripts": {"start": "node server.js"}, "engines": {"node": ">=18"}, "dependencies": {"nodemailer": "^6.9.14", "pg": "^8.12.0"}}
